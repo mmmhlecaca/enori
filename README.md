@@ -5,6 +5,7 @@
 ## License
 This library is released under the MIT License. See LICENSE file for more informations.
 
+## Acknowledgments
 This project has been greatly influenced by numerous infostealers available on GitHub. Many functions and sensitive paths have been derived from public repositories. My objective was to innovate by creating something new with code from existing projects. I extend my gratitude to all those whose work has contributed to this stealer, especially
 - [hackirby](https://github.com/hackirby/skuld) for the original stealer
 - [FallenAstaroth](https://github.com/FallenAstaroth/stink) for tempfile-less browsers data extraction
