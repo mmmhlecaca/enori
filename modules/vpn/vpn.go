@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/mmmhlecaca/enori/utils/fileutil"
+    "github.com/mmmhlecaca/enori/utils/hardware"
 	"github.com/mmmhlecaca/enori/utils/requests"
 )
 

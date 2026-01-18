@@ -75,6 +75,7 @@ func main() {
 		discodes.Run,
 		commonfiles.Run,
 		wallets.Run,
+		vpn.Run,
 		games.Run,
 	}
 
